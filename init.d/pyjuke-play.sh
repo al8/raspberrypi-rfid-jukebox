@@ -1,29 +1,27 @@
 #! /bin/sh
 ### BEGIN INIT INFO
-# Provides:          rfidmon
+# Provides:          pyjuke-play
 # Required-Start:    $remote_fs $syslog
 # Required-Stop:     $remote_fs $syslog
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: RFID monitor
-# Description:       This file should be used to construct scripts to be
-#                    placed in /etc/init.d.
+# Short-Description: pyjuke play monitor
+# Description:       This file should be placed in /etc/init.d.
 ### END INIT INFO
 
-# Author: Foo Bar <gyrus@yahoo.com>
-#
-# Please remove the "Author" lines above and replace them
-# with your own name if you copy and modify this script.
+# Author: Alan
 
 # Do NOT "set -e"
 
+# sudo update-rc.d play.sh defaults
+
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
-DESC="RFID monitor service"
-NAME=rfid.sh
+DESC="pyjuke play monitor service"
+NAME=play.sh
 PIDFILE=/var/run/$NAME.pid
 EXEC=/usr/bin/python
-DAEMON=/home/pi/play/$NAME
+DAEMON=/home/pi/raspberrypi-rfid-jukebox/$NAME
 DAEMON_ARGS="$PIDFILE"
 SCRIPTNAME=/etc/init.d/$NAME
 
@@ -50,7 +48,7 @@ do_start()
 	#   0 if daemon has been started
 	#   1 if daemon was already running
 	#   2 if daemon could not be started
-	echo "STARTING $DESC $NAME"
+	echo "starting $DESC $NAME"
 	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $EXEC --test > /dev/null \
 		|| return 1
 	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $EXEC --startas $DAEMON -- \
