@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 from chinput import HandleCh
 from proc import Proc
@@ -28,14 +28,32 @@ def setup(musicpath, commandpath):
         signal.signal(sig, sig_handler)
 
 def listmusic(musicpath):
+    """
+    look in musicpath for *.rfid files
+        rfid files are in the format of:
+        lines that start with '#'' are ignored
+        example file:
+        -----------
+        # rfid_tag this is music.mp3
+        12391789 twinkle twinkle.mp3
+        12873182 ba ba black sheep.mp3
+        -----------
+
+    look in musicpath for *.mp3 files and store them in g_musicfiles
+    """
     global g_musicfiles, g_rfid_idxfilename_map
     files_list = files.list(musicpath)
-    rfidfiles = filter(lambda f: f.endswith("rfid"), files_list)
+    rfidfiles = filter(lambda f: f.endswith(".rfid"), files_list)
 
     tmp_rfid_filename_map = {}
     for rfidfile in rfidfiles:
         with open(rfidfile) as f:
             for l in f:
+                l = l.strip()
+                if len(l) == 0:  # blank lines
+                    continue
+                if l[0] == "#":  # a comment
+                    continue
                 s = l.strip().split(" ", 1)
                 if len(s) != 2:
                     # print "invalid rfid line: %s" % l.strip()
@@ -66,7 +84,7 @@ def playtrack(fname):
         if g_last_fname == fname:
             print "same file already playing %s" % fname
             return
-    g_proc.run(["/usr/bin/mpg321", fname])
+    g_proc.run(["/usr/bin/mpg123", fname])
     g_last_fname = fname
 
 def playindex():
@@ -152,7 +170,7 @@ if __name__ == "__main__":
         musicpath = sys.argv[1]
         commandpath = sys.argv[2]
     else:
-        musicpath = "/home/pi/mp3/150 Fun Songs For Kids"
+        musicpath = "/home/pi/mp3"
         commandpath = "/tmp/monitor"
 
     setup(musicpath, commandpath)
