@@ -23,6 +23,8 @@ def setup(musicpath, commandpath):
     global_monitor = Monitor(commandpath)
     global g_last_fname
     g_last_fname = None
+    global global_monitor_musicpath
+    global_monitor_musicpath = Monitor(musicpath)
 
     for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
         signal.signal(sig, sig_handler)
@@ -62,7 +64,7 @@ def listmusic(musicpath):
 
     g_rfid_idxfilename_map = {}
     g_musicfiles = filter(lambda f: f.endswith(".mp3"), files_list)
-    print "num tracks: %d (%s)" % (len(g_musicfiles), musicpath)
+    print >> sys.stderr, "num tracks: %d (%s)" % (len(g_musicfiles), musicpath)
     for idx, fname in enumerate(g_musicfiles):
         rfid_list = []
         for rfid, rfid_filename in tmp_rfid_filename_map.items():
@@ -72,17 +74,17 @@ def listmusic(musicpath):
                 rfid_list.append(rfid)
                 break
         rfid_list_str = " (RFID:%s)" % (",".join(rfid_list)) if rfid_list else ""
-        print "%3d: %s%s" % (idx, os.path.basename(fname), rfid_list_str)
-    print "rfid_idxfilename_map:"
+        print >> sys.stderr, "%3d: %s%s" % (idx, os.path.basename(fname), rfid_list_str)
+    print >> sys.stderr, "rfid_idxfilename_map:"
     for rfid, (idx, fn) in g_rfid_idxfilename_map.items():
-        print "  %s %d %s" % (rfid, idx, os.path.basename(fn))
+        print >> sys.stderr, "  %s %d %s" % (rfid, idx, os.path.basename(fn))
 
 def playtrack(fname):
     global g_last_fname
     rc = g_proc.check()
     if g_proc.is_running():
         if g_last_fname == fname:
-            print "same file already playing %s" % fname
+            print >> sys.stderr, "same file already playing %s" % fname
             return
     g_proc.run(["/usr/bin/mpg123", fname])
     g_last_fname = fname
@@ -90,16 +92,16 @@ def playtrack(fname):
 def playindex():
     global g_track_idx
     if len(g_musicfiles) == 0:
-        print "no music files"
+        print >> sys.stderr, "no music files"
         return
     g_track_idx %= len(g_musicfiles)
     trackname = g_musicfiles[g_track_idx]
-    print "play", trackname
+    print >> sys.stderr, "play", trackname
     playtrack(trackname)
 
 def stop():
     g_proc.stop()
-    print "stop"
+    print >> sys.stderr, "stop"
 
 def handler_per_loop():
     proc_rc = g_proc.check()
@@ -107,17 +109,17 @@ def handler_per_loop():
     global g_track_idx
     updated_files = global_monitor.update()
     if updated_files:
-        print time.ctime(time.time()), "files updated", updated_files
+        print >> sys.stderr, time.ctime(time.time()), "files updated", updated_files
 
     contents_l = []
     for filename in updated_files:
         try:
             with open(filename) as f:
                 contents = f.read().strip()
-                print "filename: %s. contents: %s" % (filename, contents)
+                print >> sys.stderr, "filename: %s. contents: %s" % (filename, contents)
                 contents_l.append(contents)
         except IOError as ex:
-            print "unable to open file '%s' %s" % (filename, ex)
+            print >> sys.stderr, "unable to open file '%s' %s" % (filename, ex)
 
     if not contents_l:
         return
@@ -128,7 +130,7 @@ def handler_per_loop():
             idx, filename = g_rfid_idxfilename_map[c_rfid]
             g_track_idx = idx
             playindex()
-            print "found rfid '%s' playing %d:'%s'" % (c_rfid, idx, os.path.basename(filename))
+            print >> sys.stderr, "found rfid '%s' playing %d:'%s'" % (c_rfid, idx, os.path.basename(filename))
             continue
         elif c.startswith("play ") or c.startswith("p "):
             s = c.split();
@@ -136,7 +138,7 @@ def handler_per_loop():
                 try:
                     g_track_idx = int(s[2])
                 except ValueError:
-                    print "invalid track index '%s'" % c
+                    print >> sys.stderr, "invalid track index '%s'" % c
                     continue
                 playindex()
             elif len(s) > 2 and s[1] == "substring":
@@ -146,24 +148,29 @@ def handler_per_loop():
                         idx_fn_list.append((idx, m))
                 if len(idx_fn_list) > 0:
                     if (idx_fn_list) > 1:
-                        print "multiple files match, choosing first one"
+                        print >> sys.stderr, "multiple files match, choosing first one"
                         for idx, m in idx_fn_list:
-                            print "   ", idx, m
+                            print >> sys.stderr, "   ", idx, m
                     idx, m = idx_fn_list[0]  # grab only first command
                     g_track_idx = idx
                     playindex()
-                    print "play track substring '%s' found at %d:'%s'" % (s[2], idx, os.path.basename(m))
+                    print >> sys.stderr, "play track substring '%s' found at %d:'%s'" % (s[2], idx, os.path.basename(m))
                     continue
             else:
-                print "unknown play command '%s'" % (c)
+                print >> sys.stderr, "unknown play command '%s'" % (c)
                 continue
         elif c == "stop" or c == "s":
             stop()
             continue
         else:
-            print "unknown command '%s'" % c
+            print >> sys.stderr, "unknown command '%s'" % c
             continue
     # end for c
+
+def handler_monitor_musicpath():
+    updated_files = global_monitor_musicpath.update()
+    if updated_files:
+        listmusic(global_monitor_musicpath.path)
 
 if __name__ == "__main__":
     if len(sys.argv) > 2:
@@ -209,4 +216,5 @@ if __name__ == "__main__":
 
     while True:
         handler_per_loop()
+        handler_monitor_musicpath()
         time.sleep(.1)

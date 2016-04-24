@@ -1,11 +1,24 @@
 import os
 
 def _list(path):
+    if not os.path.exists(path):
+        return []
     files = os.listdir(path)
     files = map(lambda f: os.path.join(path, f), files)
     return sorted(filter(os.path.isfile, files))
 
 class Monitor(object):
+    """
+    Monitor a directory and return a list of modified files on every iteration
+
+    example usage:
+        m = Monitor("somepath")
+        while True:
+            for f in m.update():
+                print(f)
+            sleep(1)
+
+    """
     def __init__(self, path):
         self.path = path
         self.last_state = {}

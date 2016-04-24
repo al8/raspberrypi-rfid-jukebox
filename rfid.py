@@ -22,11 +22,18 @@ if __name__ == "__main__":
     serial = serial.Serial(serial_device, baudrate=9600)
     code = ''
 
+    # make the directory if it doesn't exist
+    outputpath = os.path.dirname(outputfilename)
+    if not os.path.exists(outputpath):
+        os.makedirs(outputpath)
+
     while True:
         data = serial.read()
         if data == '\r':
             c = ''.join(s for s in code.strip() if s in string.printable)
-            print len(c), c
+
+            print >> sys.stderr, len(c), c
+             
             writefile(c, outputfilename)
             code = ''
         else:
