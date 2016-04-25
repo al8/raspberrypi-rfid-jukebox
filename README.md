@@ -58,12 +58,17 @@ Music:
             ######################
 
 Automation setup:
-    copy monitors into /etc/init.d
+    link rfid jukebox services into /etc/init.d
         sudo ln -s /home/pi/raspberrypi-rfid-jukebox/init.d/pyjuke-rfid.sh /etc/init.d/pyjuke-rfid.sh
         sudo ln -s /home/pi/raspberrypi-rfid-jukebox/init.d/pyjuke-play.sh /etc/init.d/pyjuke-play.sh
+    configure jukebox services to run on startup
+        cd /etc/rc3.d && sudo ln -s ../init.d/pyjuke-play.sh S05pyjukeplay
+        cd /etc/rc3.d && sudo ln -s ../init.d/pyjuke-rfid.sh S05pyjukerfid
+    inspect if properly configured
+        sudo service --status-all
     manually start the processes
-        sudo /etc/init.d/pyjuke-rfid.sh start
-        sudo /etc/init.d/pyjuke-play.sh start
+        sudo service pyjuke-play.sh start
+        sudo service pyjuke-rfid.sh start
 
 Optional Setup:
 
@@ -74,9 +79,12 @@ Optional Setup:
     (mount -a to mount everything in fstab)
 
 Debugging:
+    see if service is installed, and running
+        sudo service --status-all
+        if missing, then check automation setup
     manually restart the processes
-        sudo /etc/init.d/pyjuke-rfid.sh restart
-        sudo /etc/init.d/pyjuke-play.sh restart
+        sudo service pyjuke-play.sh restart
+        sudo service pyjuke-rfid.sh restart
     Look at logs:
         sudo tail -f /var/log/pyjuke-play/current
         sudo tail -f /var/log/pyjuke-rfid/current
