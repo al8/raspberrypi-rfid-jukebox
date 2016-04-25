@@ -30,17 +30,20 @@ class Monitor(object):
         """
         filename_modified_map = {}
         for f in _list(self.path):
-            filename_modified_map[f] = os.path.getmtime(f)
+            if f.endswith(".tmp"):
+                continue
+            if f.endswith("~"):
+                continue
+            if os.path.basename(f).startswith("."):
+                continue
+            try:
+                filename_modified_map[f] = os.path.getmtime(f)
+            except OSError:
+                continue
 
         # which new files are newer than the old file?
         modified_files = []
         for filename, mtime in filename_modified_map.items():
-            if filename.endswith(".tmp"):
-                continue
-            if filename.endswith("~"):
-                continue
-            if os.path.basename(filename).startswith("."):
-                continue
             if mtime > self.last_state.get(filename, 0):
                 modified_files.append(filename)
         self.last_state = filename_modified_map
