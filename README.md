@@ -62,8 +62,8 @@ Automation setup:
         sudo ln -s /home/pi/raspberrypi-rfid-jukebox/init.d/pyjuke-rfid.sh /etc/init.d/pyjuke-rfid.sh
         sudo ln -s /home/pi/raspberrypi-rfid-jukebox/init.d/pyjuke-play.sh /etc/init.d/pyjuke-play.sh
     configure jukebox services to run on startup
-        cd /etc/rc3.d && sudo ln -s ../init.d/pyjuke-play.sh S05pyjukeplay
-        cd /etc/rc3.d && sudo ln -s ../init.d/pyjuke-rfid.sh S05pyjukerfid
+        sudo update-rc.d pyjuke-play.sh defaults
+        sudo update-rc.d pyjuke-rfid.sh defaults
     inspect if properly configured
         sudo service --status-all
     manually start the processes
